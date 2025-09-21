@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  yt-downloader:
+    build: .
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./downloads:/app/downloads
+      - ./temp:/app/temp
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+    restart: unless-stopped
+    mem_limit: 800m  # Leave some memory for the system on 1GB VPS
+    memswap_limit: 800m
