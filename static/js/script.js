@@ -55,16 +55,30 @@ async function handleDownload(e) {
         downloadData.format = formData.get('audioFormat');
     }
     
-    // Handle cookies file if uploaded
-    const cookiesFile = document.getElementById('cookiesFile').files[0];
-    if (cookiesFile) {
-        // For simplicity, we'll just pass the filename
-        // In a production app, you'd upload the file to the server first
-        downloadData.cookies_file = cookiesFile.name;
-    }
-    
     try {
         setDownloadState(true);
+        
+        // Handle cookies file upload first if provided
+        const cookiesFile = document.getElementById('cookiesFile').files[0];
+        if (cookiesFile) {
+            const cookiesFormData = new FormData();
+            cookiesFormData.append('cookies_file', cookiesFile);
+            
+            const cookiesResponse = await fetch('/upload_cookies', {
+                method: 'POST',
+                body: cookiesFormData
+            });
+            
+            const cookiesResult = await cookiesResponse.json();
+            
+            if (cookiesResponse.ok) {
+                downloadData.cookies_file = cookiesResult.filename;
+                showSuccess('Cookies file uploaded successfully');
+            } else {
+                throw new Error(cookiesResult.error);
+            }
+        }
+        
         showProgressSection();
         
         const response = await fetch('/download', {

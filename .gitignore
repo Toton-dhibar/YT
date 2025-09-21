@@ -1,6 +1,9 @@
 # Download directory
 downloads/
 
+# Upload directory
+uploads/
+
 # Python
 __pycache__/
 *.py[cod]
