@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Universal Video Downloader</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎥 Universal Video Downloader</h1>
+            <p>Download videos and audio from YouTube, Facebook, Instagram and more!</p>
+        </header>
+
+        <main>
+            <div class="download-form">
+                <form id="downloadForm">
+                    <div class="form-group">
+                        <label for="url">Video URL:</label>
+                        <input type="url" id="url" name="url" placeholder="https://www.youtube.com/watch?v=..." required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="formatType">Download Type:</label>
+                        <select id="formatType" name="formatType" onchange="toggleOptions()">
+                            <option value="video">Video</option>
+                            <option value="audio">Audio Only</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" id="videoOptions">
+                        <div class="option-group">
+                            <label for="videoQuality">Video Quality:</label>
+                            <select id="videoQuality" name="videoQuality">
+                                <option value="1080p">1080p (Full HD)</option>
+                                <option value="720p">720p (HD)</option>
+                                <option value="480p">480p (SD)</option>
+                                <option value="360p">360p</option>
+                                <option value="2k">2K (1440p)</option>
+                                <option value="4k">4K (2160p)</option>
+                            </select>
+                        </div>
+
+                        <div class="option-group">
+                            <label for="videoFormat">Video Format:</label>
+                            <select id="videoFormat" name="videoFormat">
+                                <option value="mp4">MP4</option>
+                                <option value="mkv">MKV</option>
+                                <option value="mpeg">MPEG</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group hidden" id="audioOptions">
+                        <label for="audioFormat">Audio Format:</label>
+                        <select id="audioFormat" name="audioFormat">
+                            <option value="mp3">MP3</option>
+                            <option value="flac">FLAC</option>
+                            <option value="m4a">M4A</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="cookiesFile">Cookies File (Optional):</label>
+                        <input type="file" id="cookiesFile" name="cookiesFile" accept=".txt">
+                        <small>Upload cookies.txt file for private/age-restricted content</small>
+                    </div>
+
+                    <button type="submit" id="downloadBtn">
+                        <span class="btn-text">Download</span>
+                        <span class="btn-loading hidden">Downloading...</span>
+                    </button>
+                </form>
+            </div>
+
+            <div class="progress-section hidden" id="progressSection">
+                <h3>Download Progress</h3>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div class="progress-info">
+                    <span id="progressText">0%</span>
+                    <span id="speedText"></span>
+                </div>
+                <div id="downloadStatus"></div>
+            </div>
+
+            <div class="downloads-section">
+                <h3>Downloaded Files</h3>
+                <div id="downloadsList">
+                    <p>No downloads yet</p>
+                </div>
+                <button onclick="refreshDownloads()" class="refresh-btn">Refresh List</button>
+            </div>
+
+            <div class="supported-sites">
+                <h3>Supported Sites</h3>
+                <div class="sites-grid">
+                    <div class="site-item">🎥 YouTube</div>
+                    <div class="site-item">📘 Facebook</div>
+                    <div class="site-item">📷 Instagram</div>
+                    <div class="site-item">🐦 Twitter</div>
+                    <div class="site-item">📺 Vimeo</div>
+                    <div class="site-item">🎵 SoundCloud</div>
+                    <div class="site-item">📱 TikTok</div>
+                    <div class="site-item">🎬 Dailymotion</div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
