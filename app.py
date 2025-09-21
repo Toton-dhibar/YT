@@ -5,11 +5,25 @@ import tempfile
 import threading
 import uuid
 from datetime import datetime
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 
 # Store download progress
 download_progress = {}
+
+# Configure upload folder for cookies
+UPLOAD_FOLDER = 'uploads'
+ALLOWED_EXTENSIONS = {'txt'}
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
+
+# Create upload directory
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 class ProgressHook:
     def __init__(self, download_id):
@@ -29,6 +43,36 @@ class ProgressHook:
                 'status': 'finished',
                 'filename': d['filename']
             }
+
+@app.route('/upload_cookies', methods=['POST'])
+def upload_cookies():
+    try:
+        if 'cookies_file' not in request.files:
+            return jsonify({'error': 'No file provided'}), 400
+        
+        file = request.files['cookies_file']
+        
+        if file.filename == '':
+            return jsonify({'error': 'No file selected'}), 400
+        
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            # Add timestamp to avoid filename conflicts
+            timestamp = str(int(datetime.now().timestamp()))
+            filename = f"{timestamp}_{filename}"
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(file_path)
+            
+            return jsonify({
+                'success': True,
+                'filename': filename,
+                'message': 'Cookies file uploaded successfully'
+            })
+        else:
+            return jsonify({'error': 'Invalid file type. Only .txt files are allowed'}), 400
+            
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/')
 def index():
@@ -78,11 +122,25 @@ def perform_download(download_id, url, format_type, quality, format_ext, cookies
             'writethumbnail': False,
             'writeinfojson': False,
             'ignoreerrors': False,
+            'no_warnings': False,
+            'http_headers': {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            },
+            'extractor_retries': 3,
+            'retries': 3,
         }
         
         # Add cookies if provided
         if cookies_file:
-            ydl_opts['cookiefile'] = cookies_file
+            cookies_path = os.path.join(app.config['UPLOAD_FOLDER'], cookies_file)
+            if os.path.exists(cookies_path):
+                ydl_opts['cookiefile'] = cookies_path
+            else:
+                download_progress[download_id] = {
+                    'status': 'error',
+                    'error': 'Cookies file not found'
+                }
+                return
         
         # Configure format based on user selection
         if format_type == 'audio':
@@ -136,11 +194,29 @@ def perform_download(download_id, url, format_type, quality, format_ext, cookies
         # Download the video
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             try:
+                # First, try to extract info to validate the URL
+                info = ydl.extract_info(url, download=False)
+                if not info:
+                    download_progress[download_id] = {
+                        'status': 'error',
+                        'error': 'Could not extract video information'
+                    }
+                    return
+                
+                # Now perform the actual download
                 ydl.download([url])
+                
             except yt_dlp.utils.ExtractorError as e:
+                error_msg = str(e)
+                if "Private video" in error_msg:
+                    error_msg = "This video is private. Try uploading a cookies file to access it."
+                elif "Video unavailable" in error_msg:
+                    error_msg = "This video is unavailable or has been removed."
+                elif "Sign in to confirm your age" in error_msg:
+                    error_msg = "Age-restricted content. Please upload a cookies file from a logged-in session."
                 download_progress[download_id] = {
                     'status': 'error',
-                    'error': f'Extraction failed: {str(e)}'
+                    'error': f'Extraction failed: {error_msg}'
                 }
                 return
             except yt_dlp.utils.DownloadError as e:
