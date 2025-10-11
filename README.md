@@ -30,6 +30,11 @@ pip install -r requirements.txt
 python app.py
 ```
 
+For development with debug mode:
+```bash
+FLASK_DEBUG=true FLASK_HOST=0.0.0.0 python app.py
+```
+
 2. Open your browser and navigate to:
 ```
 http://localhost:5000
@@ -38,6 +43,14 @@ http://localhost:5000
 3. Paste a Terabox video share link in the input field
 
 4. Click "Play Video" and enjoy!
+
+## Configuration
+
+The application can be configured using environment variables:
+
+- `FLASK_DEBUG`: Set to `true` to enable debug mode (default: `False`)
+- `FLASK_HOST`: Host to bind to (default: `127.0.0.1`)
+- `FLASK_PORT`: Port to run on (default: `5000`)
 
 ## Requirements
 

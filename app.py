@@ -1,9 +1,21 @@
 from flask import Flask, render_template, request, jsonify
 import requests
 import re
-from urllib.parse import quote, unquote
+from urllib.parse import quote, unquote, urlparse
+import os
 
 app = Flask(__name__)
+
+def is_valid_terabox_url(url):
+    """
+    Validate that the URL is from a Terabox domain
+    """
+    try:
+        parsed = urlparse(url)
+        allowed_domains = ['terabox.com', 'www.terabox.com', '1024terabox.com', 'www.1024terabox.com']
+        return parsed.netloc.lower() in allowed_domains
+    except:
+        return False
 
 def extract_terabox_video_url(terabox_url):
     """
@@ -12,6 +24,10 @@ def extract_terabox_video_url(terabox_url):
     try:
         # Clean the URL
         terabox_url = terabox_url.strip()
+        
+        # Validate URL is from Terabox domain
+        if not is_valid_terabox_url(terabox_url):
+            return None, "Invalid Terabox URL. Please use a valid Terabox domain."
         
         # Get the page content
         headers = {
@@ -62,7 +78,10 @@ def play_video():
     """
     Endpoint to process Terabox URL and return video information
     """
-    data = request.get_json()
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({'error': 'Invalid JSON data'}), 400
+    
     terabox_url = data.get('url', '')
     
     if not terabox_url:
@@ -91,6 +110,15 @@ def stream_video():
     
     if not video_url:
         return "No video URL provided", 400
+    
+    # Validate that the video URL is from a trusted source
+    try:
+        parsed = urlparse(video_url)
+        # Only allow streaming from Terabox-related domains
+        if not any(domain in parsed.netloc.lower() for domain in ['terabox', '1024terabox']):
+            return "Invalid video URL source", 403
+    except:
+        return "Invalid video URL", 400
     
     try:
         headers = {
@@ -124,4 +152,8 @@ def stream_video():
         return f"Error streaming video: {str(e)}", 500
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    # Use environment variables for production settings
+    debug_mode = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
+    host = os.environ.get('FLASK_HOST', '127.0.0.1')
+    port = int(os.environ.get('FLASK_PORT', 5000))
+    app.run(debug=debug_mode, host=host, port=port)
