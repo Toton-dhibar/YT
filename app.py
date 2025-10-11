@@ -14,7 +14,7 @@ def is_valid_terabox_url(url):
         parsed = urlparse(url)
         allowed_domains = ['terabox.com', 'www.terabox.com', '1024terabox.com', 'www.1024terabox.com']
         return parsed.netloc.lower() in allowed_domains
-    except:
+    except (ValueError, AttributeError):
         return False
 
 def extract_terabox_video_url(terabox_url):
@@ -87,10 +87,6 @@ def play_video():
     if not terabox_url:
         return jsonify({'error': 'No URL provided'}), 400
     
-    # Validate that it's a Terabox URL
-    if 'terabox' not in terabox_url.lower() and '1024terabox' not in terabox_url.lower():
-        return jsonify({'error': 'Invalid Terabox URL'}), 400
-    
     video_url, error = extract_terabox_video_url(terabox_url)
     
     if error:
@@ -117,7 +113,7 @@ def stream_video():
         # Only allow streaming from Terabox-related domains
         if not any(domain in parsed.netloc.lower() for domain in ['terabox', '1024terabox']):
             return "Invalid video URL source", 403
-    except:
+    except (ValueError, AttributeError):
         return "Invalid video URL", 400
     
     try:
