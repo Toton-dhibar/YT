@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terabox Video Player</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            width: 100%;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            padding: 30px;
+            margin-top: 20px;
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .logo span {
+            font-size: 3em;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: bold;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .video-container {
+            margin-top: 30px;
+            display: none;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        video {
+            width: 100%;
+            max-height: 500px;
+            display: block;
+        }
+
+        .error {
+            background: #fee;
+            border: 1px solid #fcc;
+            color: #c33;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .success {
+            background: #efe;
+            border: 1px solid #cfc;
+            color: #3c3;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .loading {
+            text-align: center;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .loading::after {
+            content: "⏳";
+            font-size: 2em;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .info {
+            background: #e3f2fd;
+            border: 1px solid #90caf9;
+            color: #1976d2;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .info h3 {
+            margin-bottom: 10px;
+        }
+
+        .info ul {
+            margin-left: 20px;
+        }
+
+        .info li {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            <span>🎬</span>
+        </div>
+        <h1>Terabox Video Player</h1>
+        
+        <div class="info">
+            <h3>How to use:</h3>
+            <ul>
+                <li>Paste your Terabox share link in the input field below</li>
+                <li>Click "Play Video" to load the video</li>
+                <li>Wait for the video to be processed and loaded</li>
+                <li>Enjoy your video!</li>
+            </ul>
+        </div>
+
+        <div class="input-group">
+            <input 
+                type="text" 
+                id="teraboxUrl" 
+                placeholder="Enter Terabox video URL (e.g., https://terabox.com/s/...)"
+                autocomplete="off"
+            >
+            <button id="playBtn" onclick="playVideo()">Play Video</button>
+        </div>
+
+        <div class="loading" id="loading">Loading video...</div>
+        <div class="error" id="error"></div>
+        <div class="success" id="success"></div>
+
+        <div class="video-container" id="videoContainer">
+            <video id="videoPlayer" controls controlsList="nodownload" aria-label="Terabox video player">
+                <source id="videoSource" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+        </div>
+    </div>
+
+    <script>
+        const urlInput = document.getElementById('teraboxUrl');
+        const playBtn = document.getElementById('playBtn');
+        const loading = document.getElementById('loading');
+        const error = document.getElementById('error');
+        const success = document.getElementById('success');
+        const videoContainer = document.getElementById('videoContainer');
+        const videoPlayer = document.getElementById('videoPlayer');
+        const videoSource = document.getElementById('videoSource');
+
+        // Allow Enter key to trigger play
+        urlInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                playVideo();
+            }
+        });
+
+        async function playVideo() {
+            const url = urlInput.value.trim();
+
+            // Hide previous messages and video
+            error.style.display = 'none';
+            success.style.display = 'none';
+            videoContainer.style.display = 'none';
+
+            // Validate input
+            if (!url) {
+                showError('Please enter a Terabox URL');
+                return;
+            }
+
+            if (!url.toLowerCase().includes('terabox') && !url.toLowerCase().includes('1024terabox')) {
+                showError('Please enter a valid Terabox URL');
+                return;
+            }
+
+            // Show loading state
+            loading.style.display = 'block';
+            playBtn.disabled = true;
+
+            try {
+                const response = await fetch('/play', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ url: url })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to load video');
+                }
+
+                // Set video source and show player
+                if (data.video_url) {
+                    // Try direct URL first
+                    videoSource.src = data.video_url;
+                    videoPlayer.load();
+                    videoContainer.style.display = 'block';
+                    showSuccess('Video loaded successfully! Click play to watch.');
+                    
+                    // If direct URL fails, try proxy
+                    videoPlayer.onerror = function() {
+                        console.log('Direct URL failed, trying proxy...');
+                        videoSource.src = '/stream?url=' + encodeURIComponent(data.video_url);
+                        videoPlayer.load();
+                    };
+                } else {
+                    throw new Error('No video URL found');
+                }
+
+            } catch (err) {
+                showError(err.message || 'An error occurred while loading the video');
+            } finally {
+                loading.style.display = 'none';
+                playBtn.disabled = false;
+            }
+        }
+
+        function showError(message) {
+            error.textContent = message;
+            error.style.display = 'block';
+        }
+
+        function showSuccess(message) {
+            success.textContent = message;
+            success.style.display = 'block';
+        }
+    </script>
+</body>
+</html>
